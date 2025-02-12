@@ -7,5 +7,5 @@
 
 ## 資料來源
 - 股票價格 : 由 yfinance 抓取
-- 期貨價格 : 由動態爬蟲從期交所行情資訊網(url : https://mis.taifex.com.tw/futures/RegularSession/StockProducts/Futures/)抓取
+- 期貨價格 : 由動態爬蟲從期交所行情資訊網抓取(url : https://mis.taifex.com.tw/futures/RegularSession/StockProducts/Futures/)
 - 交易成本 : 由期交所提供(url : https://www.taifex.com.tw/cht/4/feeSchedules)
