@@ -1,0 +1,4 @@
+yfinance
+discord
+selenium
+webdriver_manager
