@@ -4,6 +4,7 @@ import time
 from get_price.get_stock_price import get_current_stock_price
 from get_price.get_futures_price import get_futures_price
 from get_price.calculate_cost import calculate_cost
+from config import Config
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,7 +26,7 @@ class DiscordBot():
                     if channel is None:
                         logging.error(f"Channel not found or Bot has no access: {self.channel_id}")
                         return
-                    profit = (stock_price - future_price - cost) * 2000 if stock_price > future_price else (future_price - stock_price - cost) * 2000
+                    profit = (stock_price - future_price - cost) * Config.stock_per_future if stock_price > future_price else (future_price - stock_price - cost) * Config.stock_per_future
                     await channel.send(f"# 🎉 套利進場通知 🎉\n"
                                     f"```diff\n"
                                     f"🚀 {stock_code} 🚀\n"
