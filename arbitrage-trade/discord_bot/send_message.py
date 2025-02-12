@@ -4,6 +4,7 @@ import time
 from get_price.get_stock_price import get_current_stock_price
 from get_price.get_futures_price import get_futures_price
 from get_price.calculate_cost import calculate_cost
+from config import Config
 
 logging.basicConfig(level=logging.INFO)
 
@@ -13,11 +14,11 @@ class DiscordBot():
         self.channel_id = channel_id
         self.client = discord.Client(intents=discord.Intents(guilds=True, messages=True))
     
-    async def arbitrage(self, stock_code: str, future_code: str):
+    async def arbitrage(self, stock_code: str, future_code: str, future_fee: int):
         while True:
             stock_price = get_current_stock_price(stock_code)
             future_price = get_futures_price(future_code)
-            cost = calculate_cost(stock_price, future_price)
+            cost = calculate_cost(stock_price, future_price, future_fee)
 
             try:
                 if(abs(stock_price - future_price) < cost):
@@ -25,7 +26,7 @@ class DiscordBot():
                     if channel is None:
                         logging.error(f"Channel not found or Bot has no access: {self.channel_id}")
                         return
-                    profit = (stock_price - future_price - cost) * 2000 if stock_price > future_price else (future_price - stock_price - cost) * 2000
+                    profit = (stock_price - future_price - cost) * Config.stock_per_future if stock_price > future_price else (future_price - stock_price - cost) * Config.stock_per_future
                     await channel.send(f"# 🎉 套利進場通知 🎉\n"
                                     f"```diff\n"
                                     f"🚀 {stock_code} 🚀\n"
@@ -43,11 +44,11 @@ class DiscordBot():
                 logging.error(f"Unexpected Error: {e}")
             time.sleep(30)
 
-    def run(self, stock_code: str, future_code: str):
+    def run(self, stock_code: str, future_code: str, future_fee: int):
         @self.client.event
         async def on_ready():
             logging.info(f"Logged in as {self.client.user}")
             logging.info(f"Channel ID: {self.channel_id}")
-            await self.arbitrage(stock_code, future_code)
+            await self.arbitrage(stock_code, future_code, future_fee)
         
         self.client.run(self.token)
