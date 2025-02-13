@@ -22,7 +22,7 @@ class DiscordBot():
             logger.debug(f"Fetching stock price: {stock_price}, future price: {future_price}, cost: {cost}")
 
             try:
-                if(abs(stock_price - future_price) < cost):
+                if(abs(stock_price - future_price) > cost):
                     channel = await self.client.fetch_channel(self.channel_id)
                     if channel is None:
                         logger.error(f"Channel not found or Bot has no access: {self.channel_id}")
