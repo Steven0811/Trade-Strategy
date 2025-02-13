@@ -1,5 +1,6 @@
 import discord
 import time
+from datetime import datetime
 from get_price.get_stock_price import get_current_stock_price
 from get_price.get_futures_price import get_futures_price
 from get_price.calculate_cost import calculate_cost
@@ -18,14 +19,16 @@ class DiscordBot():
 
         driver = Crawler().create_driver()
 
-        while True:
+        position = 0
+        
+        while Config.start_time <= datetime.now().time() < Config.end_time:
             stock_price = get_current_stock_price(stock_code)
             future_price = get_futures_price(future_code, driver)
             cost = calculate_cost(stock_price, future_price, future_fee)
             logger.debug(f"Fetching stock price: {stock_price}, future price: {future_price}, cost: {cost}")
-
             try:
-                if(abs(stock_price - future_price) > cost):
+                if position == 0 and abs(stock_price - future_price) > cost:
+                    position = 1
                     channel = await self.client.fetch_channel(self.channel_id)
                     if channel is None:
                         logger.error(f"Channel not found or Bot has no access: {self.channel_id}")
@@ -39,6 +42,22 @@ class DiscordBot():
                                     f"**📉 期貨價格：** `{future_price:.1f}` 元\n"
                                     f"**💰 預估成本：** `{cost:.1f}` 元\n"
                                     f"**💵 預期獲利：** `{profit:.1f}` 元\n")
+                    logger.info(f"Arbitrage entry notice sent: {stock_code}")
+
+                elif position == 1 and stock_price == future_price:
+                    position = 0
+                    channel = await self.client.fetch_channel(self.channel_id)
+                    if channel is None:
+                        logger.error(f"Channel not found or Bot has no access: {self.channel_id}")
+                        return
+                    profit = (stock_price - future_price - cost) * Config.stock_per_future if stock_price > future_price else (future_price - stock_price - cost) * Config.stock_per_future
+                    await channel.send(f"# 🎉 套利出場通知 🎉\n"
+                                    f"```diff\n"
+                                    f"🚀 {stock_code} 🚀\n"
+                                    f"```\n"
+                                    f"**💹 現貨價格：** `{stock_price:.1f}` 元\n"
+                                    f"**📉 期貨價格：** `{future_price:.1f}` 元\n")
+                    logger.info(f"Arbitrage exit notice sent: {stock_code}")
 
             except discord.NotFound:
                 logger.error(f"Channel not found: {self.channel_id}")
