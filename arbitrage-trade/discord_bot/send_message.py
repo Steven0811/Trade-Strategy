@@ -3,6 +3,7 @@ import time
 from get_price.get_stock_price import get_current_stock_price
 from get_price.get_futures_price import get_futures_price
 from get_price.calculate_cost import calculate_cost
+from crawler.crawler import Crawler
 from discord_bot.config import Config
 from logger.logger import Logger
 
@@ -15,9 +16,11 @@ class DiscordBot():
     async def arbitrage(self, stock_code: str, future_code: str, future_fee: int):
         logger = Logger(__name__, "arbitrage").get_logger()
 
+        driver = Crawler().create_driver()
+
         while True:
             stock_price = get_current_stock_price(stock_code)
-            future_price = get_futures_price(future_code)
+            future_price = get_futures_price(future_code, driver)
             cost = calculate_cost(stock_price, future_price, future_fee)
             logger.debug(f"Fetching stock price: {stock_price}, future price: {future_price}, cost: {cost}")
 

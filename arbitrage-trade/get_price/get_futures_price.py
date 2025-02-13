@@ -1,13 +1,12 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
-from crawler.crawler import Crawler
+from selenium import webdriver
 from get_price.config import FutureConfig
 from logger.logger import Logger
 import time
 
-def get_futures_price(future_code : str) -> float:
+def get_futures_price(future_code : str, driver: webdriver.Chrome) -> float:
     logger = Logger(__name__, "get_futures_price").get_logger()
-    driver = Crawler().create_driver()
 
     try:
         driver.get(FutureConfig.url)
@@ -29,5 +28,3 @@ def get_futures_price(future_code : str) -> float:
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         return None
-    finally:
-        driver.quit()
