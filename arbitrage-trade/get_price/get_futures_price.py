@@ -2,12 +2,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from crawler.crawler import Crawler
 from get_price.config import FutureConfig
+from logger.logger import Logger
 import time
-import logging
-
-logging.basicConfig(level=logging.INFO)
 
 def get_futures_price(future_code : str) -> float:
+    logger = Logger(__name__, "get_futures_price").get_logger()
     driver = Crawler().create_driver()
 
     driver.get(FutureConfig.url)
@@ -25,5 +24,4 @@ def get_futures_price(future_code : str) -> float:
     cell = driver.find_element(By.XPATH, FutureConfig.price_xpath)
     price = cell.text
 
-    logging.info(f"{future_code} price: {price}")
     return float(price)
