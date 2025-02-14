@@ -6,28 +6,24 @@
 - 取得即時行情
    - 股票 : yfinance
    - 期貨 : selenium動態爬蟲
-- 部署 : Docker
+- 部署 : Docker, Docker Compose
 
 ## 使用環境
 - Python 3.8 或更高
 
-## 使用方法(以arbitrage-trade為例)
-1. **clone the repository**
-```bash
-git clone https://github.com/Steven0811/Trade-Strategy.git
-```
-2. **移動至所需交易策略資料夾**
-```bash
-cd arbitrage-trade
-```
-3. **建立image**
-```bash
-docker build -t arbitrage-trade .
-```
-4. **建立並運行container**
-```bash
-docker run -d --name arbitrage-trade arbitrage-trade
-```
+## 使用方法
+1. **創建discord bot**
+至discord developer創建一隻專屬機器人並將其邀請至指定discord伺服器
+(url: https://discord.com/developers/applications)
+3. **clone the repository**
+     ```bash
+    git clone https://github.com/Steven0811/Trade-Strategy.git
+    cd trade-stratege
+     ```
+3. **運行Docker**
+    ```bash
+    docker-compose up
+    ```
 
 ## 各項策略
 - arbitrage-trade : 期貨股票套利
