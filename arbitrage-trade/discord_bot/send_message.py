@@ -1,11 +1,12 @@
 import discord
-import logging
 import time
+from datetime import datetime
 from get_price.get_stock_price import get_current_stock_price
 from get_price.get_futures_price import get_futures_price
 from get_price.calculate_cost import calculate_cost
-
-logging.basicConfig(level=logging.INFO)
+from crawler.crawler import Crawler
+from discord_bot.config import Config
+from logger.logger import Logger
 
 class DiscordBot():
     def __init__(self, token: str, channel_id: int):
@@ -13,19 +14,26 @@ class DiscordBot():
         self.channel_id = channel_id
         self.client = discord.Client(intents=discord.Intents(guilds=True, messages=True))
     
-    async def arbitrage(self, stock_code: str, future_code: str):
-        while True:
-            stock_price = get_current_stock_price(stock_code)
-            future_price = get_futures_price(future_code)
-            cost = calculate_cost(stock_price, future_price)
+    async def arbitrage(self, stock_code: str, future_code: str, future_fee: int):
+        logger = Logger(__name__, "arbitrage").get_logger()
 
+        driver = Crawler().create_driver()
+
+        position = 0
+        
+        while Config.start_time <= Config.current_time < Config.end_time:
+            stock_price = get_current_stock_price(stock_code)
+            future_price = get_futures_price(future_code, driver)
+            cost = calculate_cost(stock_price, future_price, future_fee)
+            logger.debug(f"Fetching stock price: {stock_price}, future price: {future_price}, cost: {cost}")
             try:
-                if(abs(stock_price - future_price) < cost):
+                if position == 0 and abs(stock_price - future_price) > cost:
+                    position = 1
                     channel = await self.client.fetch_channel(self.channel_id)
                     if channel is None:
-                        logging.error(f"Channel not found or Bot has no access: {self.channel_id}")
+                        logger.error(f"Channel not found or Bot has no access: {self.channel_id}")
                         return
-                    profit = (stock_price - future_price - cost) * 2000 if stock_price > future_price else (future_price - stock_price - cost) * 2000
+                    profit = (stock_price - future_price - cost) * Config.stock_per_future if stock_price > future_price else (future_price - stock_price - cost) * Config.stock_per_future
                     await channel.send(f"# 🎉 套利進場通知 🎉\n"
                                     f"```diff\n"
                                     f"🚀 {stock_code} 🚀\n"
@@ -34,20 +42,38 @@ class DiscordBot():
                                     f"**📉 期貨價格：** `{future_price:.1f}` 元\n"
                                     f"**💰 預估成本：** `{cost:.1f}` 元\n"
                                     f"**💵 預期獲利：** `{profit:.1f}` 元\n")
+                    logger.info(f"Arbitrage entry notice sent: {stock_code}")
+
+                elif position == 1 and stock_price == future_price:
+                    position = 0
+                    channel = await self.client.fetch_channel(self.channel_id)
+                    if channel is None:
+                        logger.error(f"Channel not found or Bot has no access: {self.channel_id}")
+                        return
+                    profit = (stock_price - future_price - cost) * Config.stock_per_future if stock_price > future_price else (future_price - stock_price - cost) * Config.stock_per_future
+                    await channel.send(f"# 🎉 套利出場通知 🎉\n"
+                                    f"```diff\n"
+                                    f"🚀 {stock_code} 🚀\n"
+                                    f"```\n"
+                                    f"**💹 現貨價格：** `{stock_price:.1f}` 元\n"
+                                    f"**📉 期貨價格：** `{future_price:.1f}` 元\n")
+                    logger.info(f"Arbitrage exit notice sent: {stock_code}")
 
             except discord.NotFound:
-                logging.error(f"Channel not found: {self.channel_id}")
+                logger.error(f"Channel not found: {self.channel_id}")
             except discord.Forbidden:
-                logging.error(f"Bot is not allow to access the channel ID: {self.channel_id}")
+                logger.error(f"Bot is not allow to access the channel ID: {self.channel_id}")
             except Exception as e:
-                logging.error(f"Unexpected Error: {e}")
+                logger.error(f"Unexpected Error: {e}")
             time.sleep(30)
 
-    def run(self, stock_code: str, future_code: str):
+    def run(self, stock_code: str, future_code: str, future_fee: int):
+        logger = Logger(__name__, "run").get_logger()
+
         @self.client.event
         async def on_ready():
-            logging.info(f"Logged in as {self.client.user}")
-            logging.info(f"Channel ID: {self.channel_id}")
-            await self.arbitrage(stock_code, future_code)
+            logger.debug(f"Logged in as {self.client.user}")
+            logger.debug(f"Channel ID: {self.channel_id}")
+            await self.arbitrage(stock_code, future_code, future_fee)
         
         self.client.run(self.token)

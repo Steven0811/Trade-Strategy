@@ -1,10 +1,10 @@
 from discord_bot.send_message import DiscordBot
+from company import company
 import os
 import dotenv
-import logging
 
 dotenv.load_dotenv()
-logging.basicConfig(level=logging.INFO)
 
 dc_bot = DiscordBot(os.getenv("DCBOT_TOKEN"), os.getenv("CHANNEL_ID"))
-dc_bot.run("1101.TW", "DFF")
+for stock_code, future_code in company:
+    dc_bot.run(stock_code, future_code, 25)

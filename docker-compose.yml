@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  arbitage-trade:
+    build: ./arbitrage-trade
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./arbitrage-trade:/app
+    env_file:
+      - .env
