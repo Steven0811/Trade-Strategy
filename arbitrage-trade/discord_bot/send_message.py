@@ -21,7 +21,7 @@ class DiscordBot():
 
         position = 0
         
-        while Config.start_time <= datetime.now().time() < Config.end_time:
+        while Config.start_time <= Config.current_time < Config.end_time:
             stock_price = get_current_stock_price(stock_code)
             future_price = get_futures_price(future_code, driver)
             cost = calculate_cost(stock_price, future_price, future_fee)
